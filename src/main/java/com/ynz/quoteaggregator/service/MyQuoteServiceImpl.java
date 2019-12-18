@@ -2,16 +2,18 @@ package com.ynz.quoteaggregator.service;
 
 import com.ynz.quoteaggregator.entities.MyQuote;
 import com.ynz.quoteaggregator.entities.User;
+import com.ynz.quoteaggregator.entities.UserRole;
 import com.ynz.quoteaggregator.repository.MyQuoteRepository;
 import com.ynz.quoteaggregator.repository.UserRepository;
+import com.ynz.quoteaggregator.repository.UserRoleRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
-
 
 @Service
 public class MyQuoteServiceImpl implements MyQuoteService {
@@ -20,6 +22,9 @@ public class MyQuoteServiceImpl implements MyQuoteService {
 
     @Autowired
     private MyQuoteRepository myQuoteRepository;
+
+    @Autowired
+    private UserRoleRepository userRoleRepository;
 
     @Override
     public MyQuote saveUserMyQuote(MyQuote myQuote) {
@@ -31,10 +36,9 @@ public class MyQuoteServiceImpl implements MyQuoteService {
     public List<MyQuote> findUserMyQuoteByLoginName(String loginName) {
 
         List<MyQuote> result = myQuoteRepository
-                .findAll()
+                .findQuoteByUserLoginName(loginName)
                 .stream()
-                .filter(x -> x.getUser().getLoginName().equals(loginName))
-                .sorted((Comparator.comparingInt(MyQuote::getRating)).reversed())
+                .sorted(Comparator.comparingInt(MyQuote::getRating).reversed())
                 .collect(toList());
 
         return result;
@@ -43,5 +47,15 @@ public class MyQuoteServiceImpl implements MyQuoteService {
     @Override
     public User findUserByLoginName(String loginName) {
         return userRepository.findUserByLoginName(loginName);
+    }
+
+    @Override
+    public Set<UserRole> findUserRolesByLoginName(String loginName) {
+        return userRoleRepository.findUserRolesByLoginName(loginName);
+    }
+
+    @Override
+    public UserRole saveUserRole(UserRole userRole){
+        return userRoleRepository.save(userRole);
     }
 }

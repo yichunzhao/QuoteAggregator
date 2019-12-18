@@ -2,7 +2,6 @@ package com.ynz.quoteaggregator.entities;
 
 import javax.persistence.*;
 import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -19,10 +18,15 @@ public class User {
     private String loginName;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
-    @NotNull
     private Set<MyQuote> myQuotes = new HashSet<>();
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, targetEntity = UserRole.class)
+    private Set<UserRole> userRoles = new HashSet<>();
+
     public User() {
+//        UserRole userRole = new UserRole();
+//        userRole.setRole(Role.USER);
+//        userRoles.add(userRole);
     }
 
     public UUID getId() {
@@ -40,4 +44,6 @@ public class User {
     public void setLoginName(String loginName) {
         this.loginName = loginName;
     }
+
+
 }

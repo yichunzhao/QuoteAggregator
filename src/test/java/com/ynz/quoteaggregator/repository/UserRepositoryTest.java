@@ -23,14 +23,15 @@ class UserRepositoryTest {
     User user1 = new User();
 
     @BeforeEach
-    public void setup(){
+    public void setup() {
         user.setLoginName("ynz");
+
         user1.setLoginName("xwy");
     }
 
     @Test
     @Transactional
-    void testSaveUser(){
+    void testSaveUser() {
         User saved = userRepository.save(user);
         assertNotNull(saved);
         assertNotNull(saved.getId());
@@ -41,11 +42,11 @@ class UserRepositoryTest {
         userRepository.save(user);
         userRepository.save(user1);
         User found = userRepository.findUserByLoginName(user.getLoginName());
-        assertEquals(user.getId(),found.getId());
+        assertEquals(user.getId(), found.getId());
     }
 
     @Test
-    void testFindUserNotExisted(){
+    void testFindUserNotExisted() {
         User found = userRepository.findUserByLoginName("ynz");
         assertNull(found);
     }

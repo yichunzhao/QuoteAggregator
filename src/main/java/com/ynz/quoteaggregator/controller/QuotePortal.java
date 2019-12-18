@@ -1,9 +1,10 @@
 package com.ynz.quoteaggregator.controller;
 
-
+import com.ynz.quoteaggregator.domainmodel.Role;
 import com.ynz.quoteaggregator.dto.MyQuoteDto;
 import com.ynz.quoteaggregator.entities.MyQuote;
 import com.ynz.quoteaggregator.entities.User;
+import com.ynz.quoteaggregator.entities.UserRole;
 import com.ynz.quoteaggregator.exceptions.PermissionException;
 import com.ynz.quoteaggregator.qodcontext.QuoteResponse;
 import com.ynz.quoteaggregator.service.MyQuoteService;
@@ -12,11 +13,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import javax.validation.Valid;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 @RestController
 @RequestMapping("/api")
@@ -35,6 +39,7 @@ public class QuotePortal {
 
     @Autowired
     private MyQuoteService myQuoteService;
+
 
     @GetMapping("/quotes/qod")
     public QuoteResponse getOneQuoteAtRandom() {
@@ -57,13 +62,15 @@ public class QuotePortal {
 
     //store a quote for a user in his quote frame.
     @PostMapping("/{loginName}/my-quotes")
-    public MyQuoteDto storeUserQuote(@PathVariable(value = "loginName") String loginName, @RequestBody MyQuoteDto myQuoteDto) {
+    public MyQuoteDto storeUserQuote(@PathVariable(value = "loginName") String loginName, @Valid @RequestBody MyQuoteDto myQuoteDto) {
         User loginUser = myQuoteService.findUserByLoginName(loginName);
 
         if (loginUser == null) {
             loginUser = new User();
             loginUser.setLoginName(loginName);
+
         }
+
 
         MyQuote myQuote = new MyQuote(myQuoteDto);
         myQuote.setUser(loginUser);
@@ -89,14 +96,39 @@ public class QuotePortal {
                             @PathVariable(value = "quoteApi") String quoteApi,
                             @PathVariable(value = "apiName") String apiName) {
 
-        User loginUser = myQuoteService.findUserByLoginName(loginName);
-        if (loginUser == null) throw new PermissionException("Having no permission.");
+        Set<UserRole> roles = myQuoteService.findUserRolesByLoginName(loginName);
+
+        if (roles.isEmpty() || (!roles.stream().map(x -> x.getRole()).collect(toSet()).contains(Role.ADMIN))) {
+            throw new PermissionException("Having no permission to access.");
+        }
 
         //api-name -> key,
         if (quoteApis.containsKey(apiName)) throw new IllegalArgumentException("apiName is already existed.");
-        if(quoteApis.containsValue(quoteApi)) throw new IllegalArgumentException("quoteApi is already existed.");
+        if (quoteApis.containsValue(quoteApi)) throw new IllegalArgumentException("quoteApi is already existed.");
 
         quoteApis.put(apiName, quoteApi);
+    }
+
+    //post a new user with a role.
+    @PostMapping("/{loginName}/aggregator/{role}/Users")
+    public UserRole createUserWithRole(@PathVariable(value = "loginName") String loginName,
+                                       @PathVariable(value = "role") Role role) {
+        //
+        User user = myQuoteService.findUserByLoginName(loginName);
+
+        if (user == null) {
+            //create a new user and its role.
+            user = new User();
+            user.setLoginName(loginName);
+        }
+
+        UserRole userRole = new UserRole();
+        userRole.setUser(user);
+        userRole.setRole(role);
+
+        return myQuoteService.saveUserRole(userRole);
+
+
     }
 
 }
